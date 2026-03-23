@@ -1,0 +1,11 @@
+DOMAIN = "day_period"
+
+CONF_MORNING_START = "morning_start"
+CONF_AFTERNOON_START = "afternoon_start"
+CONF_NIGHT_START = "night_start"
+
+DEFAULT_MORNING_START = "06:00:00"
+DEFAULT_AFTERNOON_START = "12:00:00"
+DEFAULT_NIGHT_START = "22:00:00"
+
+SENSOR_OBJECT_ID = "day_period"
