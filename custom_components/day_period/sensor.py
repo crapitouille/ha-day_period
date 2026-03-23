@@ -16,9 +16,11 @@ from .const import (
     DOMAIN,
     CONF_MORNING_START,
     CONF_AFTERNOON_START,
+    CONF_EVENING_START,
     CONF_NIGHT_START,
     DEFAULT_MORNING_START,
     DEFAULT_AFTERNOON_START,
+    DEFAULT_EVENING_START,
     DEFAULT_NIGHT_START,
     SENSOR_OBJECT_ID,
 )
@@ -36,27 +38,31 @@ def _parse_time(value: str, default: str) -> time:
     return t if t is not None else time(0, 0, 0)
 
 
-def _get_boundaries(options: dict) -> tuple[time, time, time]:
+def _get_boundaries(options: dict) -> tuple[time, time, time, time]:
     m = _parse_time(options.get(CONF_MORNING_START, DEFAULT_MORNING_START), DEFAULT_MORNING_START)
     a = _parse_time(options.get(CONF_AFTERNOON_START, DEFAULT_AFTERNOON_START), DEFAULT_AFTERNOON_START)
+    e = _parse_time(options.get(CONF_EVENING_START, DEFAULT_EVENING_START), DEFAULT_EVENING_START)
     n = _parse_time(options.get(CONF_NIGHT_START, DEFAULT_NIGHT_START), DEFAULT_NIGHT_START)
-    return m, a, n
+    return m, a, e, n
 
 
-def _period_for(now_local: datetime, m: time, a: time, n: time) -> tuple[str, datetime]:
-    """Return (period, next_change_local_dt). Assumes m < a < n."""
+def _period_for(now_local: datetime, m: time, a: time, e: time, n: time) -> tuple[str, datetime]:
+    """Return (period, next_change_local_dt). Assumes m < a < e < n."""
     today = now_local.date()
 
     dt_m = dt_util.as_local(datetime.combine(today, m))
     dt_a = dt_util.as_local(datetime.combine(today, a))
+    dt_e = dt_util.as_local(datetime.combine(today, e))
     dt_n = dt_util.as_local(datetime.combine(today, n))
 
     if now_local < dt_m:
         return "night", dt_m
     if now_local < dt_a:
         return "morning", dt_a
+    if now_local < dt_e:
+        return "afternoon", dt_e
     if now_local < dt_n:
-        return "afternoon", dt_n
+        return "evening", dt_n
 
     dt_m_tomorrow = dt_util.as_local(datetime.combine(today + timedelta(days=1), m))
     return "night", dt_m_tomorrow
@@ -83,7 +89,6 @@ class DayPeriodSensor(SensorEntity):
         self._attr_unique_id = entry.entry_id
         self._attr_suggested_object_id = SENSOR_OBJECT_ID
 
-        # Device page in UI (Automations/Scenes/Scripts cards)
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
             "name": "Day Period",
@@ -102,15 +107,16 @@ class DayPeriodSensor(SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        m, a, n = _get_boundaries(self.entry.options)
+        m, a, e, n = _get_boundaries(self.entry.options)
         return {
             "boundaries": {
                 "morning_start": m.isoformat(),
                 "afternoon_start": a.isoformat(),
+                "evening_start": e.isoformat(),
                 "night_start": n.isoformat(),
             },
             "next_change": self._next_change.isoformat() if self._next_change else None,
-            "used_by_automations": self._usage,  # best-effort
+            "used_by_automations": self._usage,
         }
 
     async def async_added_to_hass(self) -> None:
@@ -126,9 +132,9 @@ class DayPeriodSensor(SensorEntity):
 
     async def _async_recompute_and_schedule(self) -> None:
         now = dt_util.now()
-        m, a, n = _get_boundaries(self.entry.options)
+        m, a, e, n = _get_boundaries(self.entry.options)
 
-        period, next_change = _period_for(now, m, a, n)
+        period, next_change = _period_for(now, m, a, e, n)
         self._period = period
         self._next_change = next_change
 
@@ -181,7 +187,6 @@ class DayPeriodSensor(SensorEntity):
                 if p.exists():
                     scan_file(p, kind)
 
-            # Deduplicate
             dedup: list[str] = []
             seen: set[str] = set()
             for r in results:

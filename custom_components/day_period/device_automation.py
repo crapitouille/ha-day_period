@@ -14,7 +14,7 @@ from homeassistant.helpers import event
 from .const import DOMAIN
 
 TRIGGER_TYPES = {"period_changed"}
-CONDITION_TYPES = {"is_morning", "is_afternoon", "is_night"}
+CONDITION_TYPES = {"is_morning", "is_afternoon", "is_evening", "is_night"}
 
 
 def _get_entity_id_for_device(hass: HomeAssistant, device_id: str) -> str | None:
@@ -46,6 +46,7 @@ async def async_get_conditions(hass: HomeAssistant, device_id: str) -> list[dict
     return [
         {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_ENTITY_ID: entity_id, CONF_TYPE: "is_morning"},
         {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_ENTITY_ID: entity_id, CONF_TYPE: "is_afternoon"},
+        {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_ENTITY_ID: entity_id, CONF_TYPE: "is_evening"},
         {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_ENTITY_ID: entity_id, CONF_TYPE: "is_night"},
     ]
 
@@ -83,6 +84,7 @@ async def async_condition_from_config(hass: HomeAssistant, config: dict):
     expected = {
         "is_morning": "morning",
         "is_afternoon": "afternoon",
+        "is_evening": "evening",
         "is_night": "night",
     }[cond_type]
 

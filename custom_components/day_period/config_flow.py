@@ -9,9 +9,11 @@ from .const import (
     DOMAIN,
     CONF_MORNING_START,
     CONF_AFTERNOON_START,
+    CONF_EVENING_START,
     CONF_NIGHT_START,
     DEFAULT_MORNING_START,
     DEFAULT_AFTERNOON_START,
+    DEFAULT_EVENING_START,
     DEFAULT_NIGHT_START,
 )
 
@@ -28,6 +30,10 @@ def _schema(values: dict) -> vol.Schema:
                 default=values.get(CONF_AFTERNOON_START, DEFAULT_AFTERNOON_START),
             ): selector({"time": {}}),
             vol.Required(
+                CONF_EVENING_START,
+                default=values.get(CONF_EVENING_START, DEFAULT_EVENING_START),
+            ): selector({"time": {}}),
+            vol.Required(
                 CONF_NIGHT_START,
                 default=values.get(CONF_NIGHT_START, DEFAULT_NIGHT_START),
             ): selector({"time": {}}),
@@ -35,11 +41,11 @@ def _schema(values: dict) -> vol.Schema:
     )
 
 
-def _validate_periods(m: str, a: str, n: str) -> None:
-    if len({m, a, n}) < 3:
+def _validate_periods(m: str, a: str, e: str, n: str) -> None:
+    if len({m, a, e, n}) < 4:
         raise vol.Invalid("Les heures doivent être distinctes.")
-    if not (m < a < n):
-        raise vol.Invalid("Les heures doivent être dans l'ordre: matin < après-midi < nuit.")
+    if not (m < a < e < n):
+        raise vol.Invalid("Les heures doivent être dans l'ordre: matin < après-midi < evening < nuit.")
 
 
 class DayPeriodConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -56,6 +62,7 @@ class DayPeriodConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _validate_periods(
                     user_input[CONF_MORNING_START],
                     user_input[CONF_AFTERNOON_START],
+                    user_input[CONF_EVENING_START],
                     user_input[CONF_NIGHT_START],
                 )
             except vol.Invalid as err:
@@ -73,6 +80,7 @@ class DayPeriodConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         defaults = {
             CONF_MORNING_START: DEFAULT_MORNING_START,
             CONF_AFTERNOON_START: DEFAULT_AFTERNOON_START,
+            CONF_EVENING_START: DEFAULT_EVENING_START,
             CONF_NIGHT_START: DEFAULT_NIGHT_START,
         }
 
@@ -97,6 +105,7 @@ class DayPeriodOptionsFlowHandler(config_entries.OptionsFlow):
                 _validate_periods(
                     user_input[CONF_MORNING_START],
                     user_input[CONF_AFTERNOON_START],
+                    user_input[CONF_EVENING_START],
                     user_input[CONF_NIGHT_START],
                 )
             except vol.Invalid as err:
@@ -110,6 +119,7 @@ class DayPeriodOptionsFlowHandler(config_entries.OptionsFlow):
                     options={
                         CONF_MORNING_START: user_input[CONF_MORNING_START],
                         CONF_AFTERNOON_START: user_input[CONF_AFTERNOON_START],
+                        CONF_EVENING_START: user_input[CONF_EVENING_START],
                         CONF_NIGHT_START: user_input[CONF_NIGHT_START],
                     },
                 )
@@ -117,6 +127,9 @@ class DayPeriodOptionsFlowHandler(config_entries.OptionsFlow):
                 return self.async_create_entry(title="", data={})
 
         current = dict(self.config_entry.options) if self.config_entry else {}
+        if CONF_EVENING_START not in current:
+            current[CONF_EVENING_START] = DEFAULT_EVENING_START
+
         return self.async_show_form(
             step_id="init",
             data_schema=_schema(current),
