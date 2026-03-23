@@ -10,7 +10,7 @@
 
 
 ### Add the integration to your Home Assistant 
-[![Add integration to my Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ha-day_period)
+[![Add integration to my Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=day_period)
 
 ## Features
 - the sensor can be used in your automation tasks.
