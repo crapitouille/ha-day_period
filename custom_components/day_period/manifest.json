@@ -1,6 +1,6 @@
 {
   "domain": "day_period",
-  "name": "WattKeeper Day Period",
+  "name": "WattKeeper - Day Period",
   "version": "1.0.3-evening",
   "documentation": "https://github.com/crapitouille/ha-day_period",
   "issue_tracker": "https://github.com/crapitouille/ha-day_period/issues",
